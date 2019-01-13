@@ -1,12 +1,11 @@
 plugins {
     id 'java'
-    id 'org.gradle.java.experimental-jigsaw' version '0.1.1'
 }
 
 group 'com.andretadeu'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 11
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()

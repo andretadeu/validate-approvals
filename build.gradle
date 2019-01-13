@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+    id 'org.gradle.java.experimental-jigsaw' version '0.1.1'
+}
+
+group 'com.andretadeu'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'args4j', name: 'args4j', version: '2.33'
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.3.2'
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.3.2'
+    testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.3.2'
+}

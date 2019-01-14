@@ -1,11 +1,10 @@
 package com.andretadeu.validateapprovals;
 
-import java.io.FileNotFoundException;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
-import java.util.Set;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Validate approvals fron M approvers to N files
@@ -15,14 +14,7 @@ public class ApprovalValidator {
     private final Set<Path> changedFilePaths;
     private Path root;
 
-    /**
-     * Constructor
-     * @param approvers Set of approvers
-     * @param changedFilePaths Set of all changed file paths
-     */
-    public ApprovalValidator(final Set<String> approvers, final Set<Path> changedFilePaths) {
-        this(approvers, changedFilePaths, getDefaultRoot());
-    }
+    private static final Set<FileVisitOption> OPTIONS = new HashSet(Arrays.asList(FileVisitOption.FOLLOW_LINKS));
 
     /**
      * Constructor
@@ -55,7 +47,59 @@ public class ApprovalValidator {
             throw new NotDirectoryException("Root folder cannot be a file.");
         }
 
-        return false;
+        Map<Path, Package> packageMap = new HashMap<>();
+        Stream<Path> paths = null;
+        try {
+            paths = Files.walk(root, FileVisitOption.FOLLOW_LINKS);
+            Set<Path> remainingPaths = paths.filter(p -> p.toFile().isFile() &&
+                    p.getFileName().toString().equals(Package.DEPENDENCIES_FILE_NAME))
+                    .map(p -> p.getParent())
+                    .collect(Collectors.toSet());
+            for (Path changedFilePath : changedFilePaths) {
+                Package pckg = new Package(root, changedFilePath.getParent());
+                if (!packageMap.containsKey(pckg.getAbsoluteLocation())) {
+                    packageMap.put(pckg.getAbsoluteLocation(), pckg);
+                    remainingPaths.remove(pckg.getAbsoluteLocation());
+                    calculateAllDependencies(pckg, packageMap, remainingPaths);
+                }
+            }
+            next_package:
+            for (Package pckg : packageMap.values()) {
+                for (String approver : approvers) {
+                    if (pckg.getOwners().contains(approver)) {
+                        break next_package;
+                    }
+                }
+                return false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private void calculateAllDependencies(final Package pckg,
+                                          final Map<Path, Package> packageMap,
+                                          final Set<Path> remainingPaths)
+            throws FileNotFoundException, NotDirectoryException {
+        if (!remainingPaths.isEmpty()) {
+            Set<Package> pathsToRemove = new HashSet<>();
+            for (Path path : remainingPaths) {
+                Set<Path> locations = new HashSet<>(Package.extractDependencies(root, path));
+                if (locations.contains(pckg.getLocation()) &&
+                        !packageMap.containsKey(Package.getAbsolutePath(root, pckg.getLocation()))) {
+                    pathsToRemove.add(new Package(root, path));
+                }
+            }
+            for (Package p : pathsToRemove) {
+                packageMap.put(p.getAbsoluteLocation(), p);
+                remainingPaths.remove(p.getAbsoluteLocation());
+            }
+            for (Package p : pathsToRemove) {
+                calculateAllDependencies(p, packageMap, remainingPaths);
+            }
+        }
+
     }
 
     private static Path getDefaultRoot() {

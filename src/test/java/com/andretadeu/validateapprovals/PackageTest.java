@@ -142,7 +142,7 @@ class PackageTest {
         Package pckg = new Package(
                 Paths.get("src/test/resources/data/repo_root"),
                 Paths.get("src/com/client/user"));
-        assertTrue(pckg.getOwners().isEmpty());
+        assertTrue(pckg.getOwners().contains("ghopper"));
     }
 
     @Test

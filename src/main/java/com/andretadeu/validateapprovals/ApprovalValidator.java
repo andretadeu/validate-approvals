@@ -47,35 +47,51 @@ public class ApprovalValidator {
             throw new NotDirectoryException("Root folder cannot be a file.");
         }
 
-        Map<Path, Package> packageMap = new HashMap<>();
         Stream<Path> paths = null;
         try {
             paths = Files.walk(root, FileVisitOption.FOLLOW_LINKS);
-            Set<Path> remainingPaths = paths.filter(p -> p.toFile().isFile() &&
-                    p.getFileName().toString().equals(Package.DEPENDENCIES_FILE_NAME))
-                    .map(p -> p.getParent())
-                    .collect(Collectors.toSet());
-            for (Path changedFilePath : changedFilePaths) {
-                Package pckg = new Package(root, changedFilePath.getParent());
-                if (!packageMap.containsKey(pckg.getAbsoluteLocation())) {
-                    packageMap.put(pckg.getAbsoluteLocation(), pckg);
-                    remainingPaths.remove(pckg.getAbsoluteLocation());
-                    calculateAllDependencies(pckg, packageMap, remainingPaths);
-                }
-            }
-            next_package:
-            for (Package pckg : packageMap.values()) {
-                for (String approver : approvers) {
-                    if (pckg.getOwners().contains(approver)) {
-                        break next_package;
-                    }
-                }
-                return false;
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Set<Path> remainingPaths = paths.filter(p -> p.toFile().isFile() &&
+                p.getFileName().toString().equals(Package.DEPENDENCIES_FILE_NAME))
+                .map(p -> p.getParent())
+                .collect(Collectors.toSet());
+
+        Map<Path, Package> packageMap = resolveDependencies(remainingPaths);
+
+        return matchApprovers(packageMap, approvers);
+    }
+
+    static boolean matchApprovers(Map<Path, Package> packageMap, Set<String> approvers) {
+        next_package:
+        for (Package pckg : packageMap.values()) {
+            for (String approver : approvers) {
+                if (pckg.getOwners().contains(approver)) {
+                    continue next_package;
+                }
+            }
+            return false;
+        }
         return true;
+    }
+
+    Map<Path, Package> resolveDependencies(Set<Path> remainingPaths)
+            throws FileNotFoundException, NotDirectoryException {
+        Map<Path, Package> result = new HashMap<>();
+        for (Path changedFilePath : changedFilePaths) {
+            File sourceFile = Package.getAbsolutePath(root, changedFilePath).toFile();
+            if (!sourceFile.isFile()) {
+                throw new FileNotFoundException("File " + sourceFile.getName() + " does not exist.");
+            }
+            Package pckg = new Package(root, changedFilePath.getParent());
+            if (!result.containsKey(pckg.getAbsoluteLocation())) {
+                result.put(pckg.getAbsoluteLocation(), pckg);
+                remainingPaths.remove(pckg.getAbsoluteLocation());
+                calculateAllDependencies(pckg, result, remainingPaths);
+            }
+        }
+        return result;
     }
 
     private void calculateAllDependencies(final Package pckg,
@@ -85,10 +101,10 @@ public class ApprovalValidator {
         if (!remainingPaths.isEmpty()) {
             Set<Package> pathsToRemove = new HashSet<>();
             for (Path path : remainingPaths) {
-                Set<Path> locations = new HashSet<>(Package.extractDependencies(root, path));
-                if (locations.contains(pckg.getLocation()) &&
-                        !packageMap.containsKey(Package.getAbsolutePath(root, pckg.getLocation()))) {
-                    pathsToRemove.add(new Package(root, path));
+                Set<Path> locations = Package.extractDependencies(path);
+                if (locations.contains(pckg.getLocation()) && !packageMap.containsKey(path)) {
+                    Path newLocation = path.subpath(root.getNameCount(), path.getNameCount());
+                    pathsToRemove.add(new Package(root, newLocation));
                 }
             }
             for (Package p : pathsToRemove) {

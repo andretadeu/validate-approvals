@@ -33,8 +33,13 @@ final class Package {
     }
 
     static Set<Path> extractDependencies(final Path root, final Path location) {
+        return extractDependencies(getAbsolutePath(root, location));
+    }
+
+    static Set<Path> extractDependencies(final Path fullPath) {
+
+        File dependenciesFile = Paths.get(fullPath.toString(), DEPENDENCIES_FILE_NAME).toFile();
         Set<Path> result = new HashSet<>();
-        File dependenciesFile = Paths.get(root.toString(), location.toString(), DEPENDENCIES_FILE_NAME).toFile();
         if (dependenciesFile.isFile()) {
             try (BufferedReader br = new BufferedReader(new FileReader(dependenciesFile))) {
                 String dependencyLocation;
@@ -49,13 +54,20 @@ final class Package {
     }
 
     static Set<String> extractOwners(final Path root, final Path location) {
-        Set<String> result = new HashSet<>();
+        final Set<String> result = new HashSet<>();
         File ownersFile = Paths.get(root.toString(), location.toString(), OWNERS_FILE_NAME).toFile();
-        if (!ownersFile.isFile()) {
-            while (!(root.equals(ownersFile.toPath()) || ownersFile.isFile())) {
-                ownersFile = new File(ownersFile.getParentFile().getParentFile(), OWNERS_FILE_NAME);
+        result.addAll(readOwners(ownersFile));
+        while (!root.equals(ownersFile.getParentFile().toPath())) {
+            ownersFile = new File(ownersFile.getParentFile().getParentFile(), OWNERS_FILE_NAME);
+            if (ownersFile.isFile()) {
+                result.addAll(readOwners(ownersFile));
             }
         }
+        return result;
+    }
+
+    private static Set<String> readOwners(File ownersFile) {
+        final Set<String> result = new HashSet<>();
         try (BufferedReader br = new BufferedReader(new FileReader(ownersFile))) {
             String owner;
             while ((owner = br.readLine()) != null) {

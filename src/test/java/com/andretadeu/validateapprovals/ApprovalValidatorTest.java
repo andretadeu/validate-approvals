@@ -3,12 +3,13 @@ package com.andretadeu.validateapprovals;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -137,5 +138,49 @@ public class ApprovalValidatorTest {
         );
         Path root = Paths.get("src/test/resources/data/repo_root");
         assertFalse(new ApprovalValidator(approvers, changedFilesPath, root).validate());
+    }
+
+    @Test
+    public void testResolveDependenciesOKApproved01() throws FileNotFoundException, NotDirectoryException {
+        Set<String> approvers = new HashSet<>(Arrays.asList("ghopper", "alovelace"));
+        Set<Path> changedFilesPath = new HashSet<>(
+                Arrays.asList(
+                        Paths.get("src/com/client/follow/Follow.java"),
+                        Paths.get("src/com/client/user/User.java")
+                )
+        );
+        Path root = Paths.get("src/test/resources/data/repo_root");
+
+        Set<Path> rp = getRemainingPaths(root);
+
+        assertEquals(8, new ApprovalValidator(approvers, changedFilesPath, root).resolveDependencies(rp).size());
+    }
+
+    @Test
+    public void testResolveDependenciesBaseCase() throws FileNotFoundException, NotDirectoryException {
+        Set<String> approvers = new HashSet<>(Arrays.asList("kantonelli"));
+        Set<Path> changedFilesPath = new HashSet<>(
+                Arrays.asList(
+                        Paths.get("src/com/client/message/Message.java")
+                )
+        );
+        Path root = Paths.get("src/test/resources/data/repo_root");
+
+        Set<Path> rp = getRemainingPaths(root);
+
+        assertEquals(2, new ApprovalValidator(approvers, changedFilesPath, root).resolveDependencies(rp).size());
+    }
+
+    private Set<Path> getRemainingPaths(Path root) {
+        Stream<Path> paths = null;
+        try {
+            paths = Files.walk(root, FileVisitOption.FOLLOW_LINKS);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return paths.filter(p -> p.toFile().isFile() &&
+                p.getFileName().toString().equals(Package.DEPENDENCIES_FILE_NAME))
+                .map(p -> p.getParent())
+                .collect(Collectors.toSet());
     }
 }

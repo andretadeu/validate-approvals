@@ -16,10 +16,21 @@ public class ApprovalValidator {
     private final Set<Path> changedFilePaths;
     private Path root;
 
+    /**
+     * Constructor
+     * @param approvers Set of approvers
+     * @param changedFilePaths Set of all changed file paths
+     */
     public ApprovalValidator(final Set<String> approvers, final Set<Path> changedFilePaths) {
         this(approvers, changedFilePaths, getDefaultRoot());
     }
 
+    /**
+     * Constructor
+     * @param approvers Set of approvers
+     * @param changedFilePaths Set of all changed file paths
+     * @param root Path to the root folder of the changed files
+     */
     public ApprovalValidator(final Set<String> approvers, final Set<Path> changedFilePaths, final Path root) {
         Optional.ofNullable(approvers).orElseThrow(new IllegalArgumentExceptionSupplier("approvers"));
         Optional.ofNullable(changedFilePaths).orElseThrow(new IllegalArgumentExceptionSupplier("changedFilePaths"));

@@ -83,7 +83,9 @@ class PackageTest {
         Package pckg = new Package(
                 Paths.get("src/test/resources/data/repo_root"),
                 Paths.get("src/com/client/message"));
-        assertTrue(pckg.getOwners().contains("eclarke") && pckg.getOwners().contains("kantonelli"));
+        assertTrue(pckg.getOwners().contains("eclarke") &&
+                pckg.getOwners().contains("kantonelli") &&
+                pckg.getOwners().contains("ghopper"));
     }
 
     @Test

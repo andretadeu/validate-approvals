@@ -63,6 +63,12 @@ public class ApprovalValidator {
         return matchApprovers(packageMap, approvers);
     }
 
+    /**
+     * Check if the approvers are in all projects required
+     * @param packageMap Map of packages, resulted from the resolved dependencies
+     * @param approvers Set of approvers, provided by command line argument
+     * @return true if it matches, false if there is at least one project that the approvers cannot approve.
+     */
     static boolean matchApprovers(Map<Path, Package> packageMap, Set<String> approvers) {
         next_package:
         for (Package pckg : packageMap.values()) {

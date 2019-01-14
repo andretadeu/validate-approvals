@@ -37,7 +37,7 @@ public class Main {
         } catch (CmdLineException cmdLineEx) {
             System.err.println(cmdLineEx.getMessage());
             System.err.println(
-                    "java -jar dep-mgmt-<versão>.jar --approvers <List of approvers> " +
+                    "java -jar validate-approvals-fatjar-<versão>.jar --approvers <List of approvers> " +
                             "--changed-files <Changed files for approval> " +
                             "--root-folder <Repository's root folder>");
             parser.printUsage(System.err);

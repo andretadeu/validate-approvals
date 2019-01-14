@@ -50,7 +50,7 @@ public class ApprovalValidatorTest {
                 )
         );
         assertThrows(
-                FileNotFoundException.class,
+                NotDirectoryException.class,
                 () -> new ApprovalValidator(approvers, changedFilesPath, Paths.get("build.gradle")).validate());
     }
 

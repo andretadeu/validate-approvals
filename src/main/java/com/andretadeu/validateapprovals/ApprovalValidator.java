@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Validate approvals fron M approvers to N files
@@ -32,10 +31,12 @@ public class ApprovalValidator {
      * @param root Path to the root folder of the changed files
      */
     public ApprovalValidator(final Set<String> approvers, final Set<Path> changedFilePaths, final Path root) {
-        Optional.ofNullable(approvers).orElseThrow(new IllegalArgumentExceptionSupplier("approvers"));
-        Optional.ofNullable(changedFilePaths).orElseThrow(new IllegalArgumentExceptionSupplier("changedFilePaths"));
-        this.approvers = approvers;
-        this.changedFilePaths = changedFilePaths;
+        this.approvers = Optional
+                .ofNullable(approvers)
+                .orElseThrow(new IllegalArgumentExceptionSupplier("approvers"));
+        this.changedFilePaths = Optional
+                .ofNullable(changedFilePaths)
+                .orElseThrow(new IllegalArgumentExceptionSupplier("changedFilePaths"));
         this.root = root == null ? getDefaultRoot() : root;
     }
 
@@ -47,6 +48,13 @@ public class ApprovalValidator {
      * @throws NotDirectoryException If {@link #root} is not a directory
      */
     public boolean validate() throws FileNotFoundException, NotDirectoryException {
+        if (!root.toFile().exists()) {
+            throw new FileNotFoundException("Root folder not found");
+        }
+        if (!root.toFile().isDirectory()) {
+            throw new NotDirectoryException("Root folder cannot be a file.");
+        }
+
         return false;
     }
 
@@ -54,17 +62,4 @@ public class ApprovalValidator {
         return Paths.get("");
     }
 
-    private static final class IllegalArgumentExceptionSupplier implements Supplier<IllegalArgumentException> {
-
-        private final String argument;
-
-        IllegalArgumentExceptionSupplier(final String argument) {
-            this.argument = argument;
-        }
-
-        @Override
-        public IllegalArgumentException get() {
-            return new IllegalArgumentException("You must provide a value for '" + argument + "'.");
-        }
-    }
 }

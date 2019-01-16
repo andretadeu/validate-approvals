@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'com.adarshr.test-logger' version '1.6.0'
 }
 
 group 'com.andretadeu'
@@ -20,6 +21,42 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+// From https://stackoverflow.com/a/46533151
+testlogger {
+    // pick a theme - mocha, standard, plain, mocha-parallel, standard-parallel or plain-parallel
+    theme 'standard'
+
+    // set to false to disable detailed failure logs
+    showExceptions true
+
+    // set threshold in milliseconds to highlight slow tests
+    slowThreshold 2000
+
+    // displays a breakdown of passes, failures and skips along with total duration
+    showSummary true
+
+    // set to false to hide passed tests
+    showPassed true
+
+    // set to false to hide skipped tests
+    showSkipped true
+
+    // set to false to hide failed tests
+    showFailed true
+
+    // enable to see standard out and error streams inline with the test results
+    showStandardStreams false
+
+    // set to false to hide passed standard out and error streams
+    showPassedStandardStreams true
+
+    // set to false to hide skipped standard out and error streams
+    showSkippedStandardStreams true
+
+    // set to false to hide failed standard out and error streams
+    showFailedStandardStreams true
 }
 
 task fatJar(type: Jar) {
